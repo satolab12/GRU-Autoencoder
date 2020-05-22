@@ -72,7 +72,8 @@ for epoch in range(opt.num_epochs):
         recon = xhat[:len_test].reshape(-1,opt.T,opt.n_channels,opt.image_size,opt.image_size)
 
         for i in range(len_test):
-            save_image((tests[i]/2+0.5), os.path.join(opt.log_folder + '/generated_videos', "real_epoch{}_no{}.png" .format(epoch,i)))
+            if epoch == 0:
+                save_image((tests[i]/2+0.5), os.path.join(opt.log_folder + '/generated_videos', "real_epoch{}_no{}.png" .format(epoch,i)))
             save_image((recon[i]/2+0.5), os.path.join(opt.log_folder+'/generated_videos', "recon_epoch{}_no{}.png" .format(epoch,i)))
             #torch.save(autoencoder.state_dict(), os.path.join('./weights', 'G_epoch{:04d}.pth'.format(epoch+1)))
 
