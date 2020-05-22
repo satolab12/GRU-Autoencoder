@@ -8,9 +8,7 @@ from torchvision import transforms
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
 from network import Seq2seqGRU
-
 import os
-
 
 parse = ParseGRU()
 opt = parse.args
