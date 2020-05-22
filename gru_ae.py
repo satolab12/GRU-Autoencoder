@@ -1,13 +1,12 @@
 import numpy as np
 import torch
 from torch import nn
-from lib import ParseGRU
+from lib import ParseGRU,Visualizer,Seq_Dataset
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
-from function import Seq_Dataset
 from network import Seq2seqGRU
 
 import os
@@ -34,10 +33,11 @@ transform = transforms.Compose([
     ])
 
 dataset_ = datasets.ImageFolder(opt.dataset, transform=transform)  # has all image shape,[data,label]
-data_ = Seq_Dataset(dataset_, opt.T)  # data_ has 2870 shape
+data_ = Seq_Dataset(dataset_, opt.T,shuffle=True)  # data_ has 2870 shape
 video_loader = DataLoader(data_, batch_size=opt.batch_size, shuffle=True)  # if shuffle True index is ramdom
 
 losses = np.zeros(opt.num_epochs)
+visual = Visualizer(opt)
 
 for epoch in range(opt.num_epochs):
     i = 0
@@ -65,6 +65,8 @@ for epoch in range(opt.num_epochs):
         epoch + 1,
         opt.num_epochs,
         loss))
+    visual.losses = losses
+    visual.plot_loss()
 
     if epoch % opt.check_point == 0:
         j = 0
