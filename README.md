@@ -9,15 +9,15 @@ https://qiita.com/satolab/items/c4e9a287e8d1ebb010a6
 
 ## 動画再構成モデル
 
-<img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/583727/c5ddc1c8-f82d-b6ff-8cca-b9cc7a2787f8.png" width="200×100">
+<img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/583727/c5ddc1c8-f82d-b6ff-8cca-b9cc7a2787f8.png" width="500×250">
 $\boldsymbol{x_1,x_2,...,x_T}$は，Tの長さを持つ動画を意味し，$\boldsymbol{x_t}$は各frameです．
 encoderは各frameの画像を受け取り，$\boldsymbol{z}$へと写像します．これをT回繰り返すことで，入力の動画に対応する系列長の潜在変数，$\boldsymbol{Z_1,Z_2,...,Z_T}$を得ます．
 この潜在変数を，GRUを用いてモデル化します．各tにおける出力が，$\boldsymbol{\hat{z_t}}$に対応します．あとはこれを用いて，decoderにより観測空間へ写像するという手順になります．
 
 ## 結果
-
 - 5,000 itr
 5,000回ともなると，動きもよく再現されております．
+
 ![real_itr5000_no0.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/583727/f2e35deb-0162-e52f-ec2a-cdbf2ce64d77.png)
 ![recon_itr5000_no0.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/583727/38ce5478-dbe1-0673-d9d3-2d65ae755d5b.png)
 
