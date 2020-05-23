@@ -1,80 +1,105 @@
 import numpy as np
 import torch
 from torch import nn
-from lib import ParseGRU,Visualizer,Seq_Dataset
+from lib import ParseGRU,Visualizer
 from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from torchvision import transforms
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
 from network import Seq2seqGRU
 import os
+import skvideo.io
+import glob
 
 parse = ParseGRU()
 opt = parse.args
-len_test = 3
-autoencoder = Seq2seqGRU(opt.z_dim,opt)
+autoencoder = Seq2seqGRU(opt)
 autoencoder.train()
 mse_loss = nn.MSELoss()
 optimizer = torch.optim.Adam(autoencoder.parameters(),
                              lr=opt.learning_rate,
                              weight_decay=1e-5)
 
+current_path = os.path.dirname(__file__)
+resized_path = os.path.join(current_path, 'resized_data')
+files = glob.glob(resized_path+'/*')
+videos = [ skvideo.io.vread(file) for file in files ]
+videos =  [video.transpose(3, 0, 1, 2) / 255.0 for video in videos ]
+n_videos = len(videos)
+
+def transform(video):
+    trans_video = torch.empty(opt.n_channels,opt.T,opt.image_size,opt.image_size)
+    for i in range(opt.T):
+        img = video[:,i]
+        img = trans(img).reshape(opt.n_channels,opt.image_size,opt.image_size)
+        trans_video[:,i] = img
+    return trans_video
+
+def trim(video):
+    start = np.random.randint(0, video.shape[1] - (opt.T+1))
+    end = start + opt.T
+    return video[:, start:end, :, :]
+
+def random_choice():
+    X = []
+    for _ in range(opt.batch_size):
+        video = videos[np.random.randint(0, n_videos-1)]
+        video = torch.Tensor(trim(video))#video has (C,T,img,img)
+
+        video = transform(video)
+        X.append(video)
+    X = torch.stack(X)
+    return X
+
 if opt.cuda:
     autoencoder.cuda()
 
-transform = transforms.Compose([
+trans = transforms.Compose([
+    transforms.ToPILImage(),
     transforms.Grayscale(1),
     transforms.Resize((opt.image_size,opt.image_size)),
     transforms.ToTensor(),
     transforms.Normalize((0.5, ), (0.5, )),
     ])
 
-dataset_ = datasets.ImageFolder(opt.dataset, transform=transform)  # has all image shape,[data,label]
-data_ = Seq_Dataset(dataset_, opt.T,shuffle=True)  # data_ has 2870 shape
-video_loader = DataLoader(data_, batch_size=opt.batch_size, shuffle=True)  # if shuffle True index is ramdom
-
-losses = np.zeros(opt.num_epochs)
+losses = np.zeros(opt.n_itrs)
 visual = Visualizer(opt)
 
-for epoch in range(opt.num_epochs):
-    i = 0
-    for data,label in video_loader:
+for itr in range(opt.n_itrs):
 
-        x = data.transpose(2,1).reshape(-1, opt.T,opt.n_channels*opt.image_size*opt.image_size)
+    real_videos = random_choice()
+    x = real_videos.reshape(-1, opt.T,opt.n_channels*opt.image_size*opt.image_size)
 
-        if opt.cuda:
-            x = Variable(x).cuda()
-        else:
-            x = Variable(x)
+    if opt.cuda:
+        x = Variable(x).cuda()
+    else:
+        x = Variable(x)
 
-        xhat,z = autoencoder(x)
-        xhat = xhat.reshape(-1, opt.T,opt.n_channels*opt.image_size*opt.image_size)
+    xhat,z = autoencoder(x)
+    xhat = xhat.reshape(-1, opt.T,opt.n_channels*opt.image_size*opt.image_size)
 
-        # 出力画像（再構成画像）と入力画像の間でlossを計算
-        loss = mse_loss(xhat, x)
-        losses[epoch] = losses[epoch] * (i / (i + 1.)) + loss.data * (1. / (i + 1.))
+    # 出力画像（再構成画像）と入力画像の間でlossを計算
+    loss = mse_loss(xhat, x)
+    losses[itr] = losses[itr] * (itr / (itr + 1.)) + loss.data * (1. / (itr + 1.))
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
-    print('epoch [{}/{}], loss: {:.4f}'.format(
-        epoch + 1,
-        opt.num_epochs,
+    print('itr [{}/{}], loss: {:.4f}'.format(
+        itr + 1,
+        opt.n_itrs,
         loss))
     visual.losses = losses
     visual.plot_loss()
 
-    if epoch % opt.check_point == 0:
-        j = 0
-        tests = x[:len_test].reshape(-1,opt.T,opt.n_channels,opt.image_size,opt.image_size)
-        recon = xhat[:len_test].reshape(-1,opt.T,opt.n_channels,opt.image_size,opt.image_size)
+    if itr % opt.check_point == 0:
+        tests = x[:opt.n_test].reshape(-1,opt.T,opt.n_channels,opt.image_size,opt.image_size)
+        recon = xhat[:opt.n_test].reshape(-1,opt.T,opt.n_channels,opt.image_size,opt.image_size)
 
-        for i in range(len_test):
-            if epoch == 0:
-                save_image((tests[i]/2+0.5), os.path.join(opt.log_folder + '/generated_videos', "real_epoch{}_no{}.png" .format(epoch,i)))
-            save_image((recon[i]/2+0.5), os.path.join(opt.log_folder+'/generated_videos', "recon_epoch{}_no{}.png" .format(epoch,i)))
-            #torch.save(autoencoder.state_dict(), os.path.join('./weights', 'G_epoch{:04d}.pth'.format(epoch+1)))
+        for i in range(opt.n_test):
+            #if itr == 0:
+            save_image((tests[i]/2+0.5), os.path.join(opt.log_folder + '/generated_videos', "real_itr{}_no{}.png" .format(itr,i)))
+            save_image((recon[i]/2+0.5), os.path.join(opt.log_folder+'/generated_videos', "recon_itr{}_no{}.png" .format(itr,i)))
+            #torch.save(autoencoder.state_dict(), os.path.join('./weights', 'G_itr{:04d}.pth'.format(itr+1)))
 
 

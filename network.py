@@ -1,15 +1,14 @@
 from torch import nn
 from torch.autograd import Variable
-import torch#.utils.data import DataLoader
+import torch
 
 def get_gru_initial_state(num_samples,opt):
-    return Variable(torch.FloatTensor(num_samples, opt.ngru).normal_())  # m
-
-
+    return Variable(torch.FloatTensor(num_samples, opt.gru_dim).normal_())  # m
 
 class Seq2seqGRU(nn.Module):
-    def __init__(self,z_dim,opt):
+    def __init__(self,opt):
         self.opt = opt
+        z_dim = opt.z_dim
         super(Seq2seqGRU, self).__init__()
 
         self.encoder = nn.Sequential(
@@ -40,7 +39,7 @@ class Seq2seqGRU(nn.Module):
         )
 
         self.fc3 = nn.Sequential(
-            nn.Linear(opt.ngru,512*4*4),
+            nn.Linear(opt.gru_dim,512*4*4),
             #nn.ReLU(True),
         )
 
@@ -67,11 +66,11 @@ class Seq2seqGRU(nn.Module):
         )
 
         self.fc2 = nn.Sequential(
-            nn.Linear(opt.ngru,z_dim),
+            nn.Linear(opt.gru_dim,z_dim),
             nn.ReLU(True),
         )
 
-        self.gru = nn.GRU(z_dim,opt.ngru,batch_first=True)
+        self.gru = nn.GRU(z_dim,opt.gru_dim,batch_first=True)
         #self.grucelldecoder = nn.GRU(z_dim,ngru)
 
     def forward(self, x):
@@ -80,18 +79,9 @@ class Seq2seqGRU(nn.Module):
         z = self.fc1(feature.reshape(bs*self.opt.T,-1))
         z_ = z.reshape(bs,self.opt.T,self.opt.z_dim)
         h = get_gru_initial_state(bs,self.opt).unsqueeze(0).cuda()
-        #eos = Variable(torch.ones(bs,z_dim)).cuda()#zero is ok?
-        #xhat = torch.empty(T,bs,3*64*64)
-        #for t in range(T):
         o,_ = self.gru(z_,h)
         o = self.fc3(o)
-        # for t in range(T):
-        #     if t==0:
-        #         h_hat = self.grucelldecoder(eos,h)#eos?
-        #         z_hat = self.fc(h_hat)
-        #     else:
-        #         h_hat = self.grucelldecoder(z_hat,h_hat)
-        #         z_hat = self.fc(h_hat)
         xhat = (self.decoder(o.reshape(bs*self.opt.T,512,4,4)).reshape(bs*self.opt.T,self.opt.n_channels*64*64))
+
         return xhat,z
 
