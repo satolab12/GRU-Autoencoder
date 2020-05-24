@@ -1,6 +1,7 @@
 # GRU-Autoencoder
 
 https://qiita.com/satolab/items/c4e9a287e8d1ebb010a6
+
 Powered by [satolab](https://qiita.com/satolab)
 
 ## 概要 Overview
