@@ -4,7 +4,7 @@ https://qiita.com/satolab/items/c4e9a287e8d1ebb010a6
 
 Powered by [satolab](https://qiita.com/satolab)
 
-## 概要 Overview
+## Overview
 
 時系列モデルであるGRUと，encoder-decoderモデルを組み合わせた，動画再構成モデルです．
 ここではこのモデルを，GRU-AEと呼びます．
@@ -12,11 +12,11 @@ Powered by [satolab](https://qiita.com/satolab)
 This is a video reconstruction model that combines GRU (a time-series model) and encoder-decoder model.
 Here, we call this model GRU-AE.
 
-## 動画再構成モデル Model
+## Model
 
 <img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/583727/c5ddc1c8-f82d-b6ff-8cca-b9cc7a2787f8.png" width="400×200">
 
-## 結果 Results
+## Results
 - 5,000 itr(input,output)
 
 ![real_itr5000_no0.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/583727/f2e35deb-0162-e52f-ec2a-cdbf2ce64d77.png)
