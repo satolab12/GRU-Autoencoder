@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 from torch import nn
@@ -6,7 +7,6 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
 from network import Seq2seqGRU
-import os
 import skvideo.io
 import glob
 
