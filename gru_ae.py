@@ -2,13 +2,13 @@ import os
 import numpy as np
 import torch
 from torch import nn
-from lib import ParseGRU,Visualizer
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
-from network import Seq2seqGRU
 import skvideo.io
 import glob
+from lib import ParseGRU,Visualizer
+from network import Seq2seqGRU
 
 parse = ParseGRU()
 opt = parse.args
